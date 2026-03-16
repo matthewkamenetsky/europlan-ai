@@ -1,8 +1,8 @@
 import sqlite3
 import pandas as pd
 
-DB_PATH = "data/europlan.db"
-CITIES_CSV = "data/cities.csv"
+DB_PATH = "backend/data/europlan.db"
+CITIES_CSV = "backend/data/cities.csv"
 
 conn = sqlite3.connect(DB_PATH)
 cursor = conn.cursor()
