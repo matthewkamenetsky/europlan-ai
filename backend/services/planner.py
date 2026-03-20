@@ -36,13 +36,20 @@ TRAIN_KMH = 120
 def get_city(city_name: str):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
+
+    cleaned = city_name.strip()
+    if not cleaned:
+        conn.close()
+        return None
+
     cursor.execute("""
         SELECT name, country_code, lat, lon FROM cities
-        WHERE name LIKE ?
-        OR asciiname LIKE ?
-        OR alternatenames LIKE ?
+        WHERE LOWER(name) = LOWER(?)
+           OR LOWER(asciiname) = LOWER(?)
+           OR LOWER(',' || alternatenames || ',') LIKE LOWER(?)
         LIMIT 1
-    """, (f"%{city_name}%", f"%{city_name}%", f"%{city_name}%"))
+    """, (cleaned, cleaned, f"%,{cleaned},%"))
+
     result = cursor.fetchone()
     conn.close()
     return result
