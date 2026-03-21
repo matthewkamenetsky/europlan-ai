@@ -18,6 +18,16 @@ cursor.executescript("""
         lat REAL NOT NULL,
         lon REAL NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS trips (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        cities TEXT NOT NULL,
+        trip_length INTEGER NOT NULL,
+        interests TEXT NOT NULL,
+        itinerary TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
 """)
 
 conn.commit()

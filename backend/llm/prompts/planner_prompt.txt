@@ -7,6 +7,9 @@ Trip details:
 Cities to visit:
 {city_blocks}
 
+Trip structure:
+{trip_structure}
+
 ---
 
 STRICT RULES — follow every one of these exactly:
@@ -15,20 +18,27 @@ STRICT RULES — follow every one of these exactly:
 2. Only visit the cities listed above. Never add unlisted cities as main destinations.
 3. Visit cities in the exact order listed above. Do not reorder them.
 4. Each city has a day count listed. Allocate exactly that many days to it. Do not redistribute days.
-5. On the first day in each city, note the travel time from the previous city. If travel is more than 2 hours, keep activities light — 1 or 2 things only.
-6. Only suggest a day trip if the city block explicitly lists day trip options AND the city has 2 or more days. Never suggest a day trip for a 1-day city.
-7. Day trips are optional additions to a day — the traveller returns to the main city that evening. They are not overnight stays.
-8. Each full day should have 2-3 activities with a short description of each. Travel-heavy days should have 1-2.
-9. Only use attractions listed in each city's block. Do not invent attractions.
-10. Do not repeat the same attraction on multiple days.
-11. Use the exact day format shown in the example below.
+5. The day heading must always name the city where the traveller sleeps that night. Use the trip structure above to determine this — do not infer it yourself.
+6. If a day is marked "no travel" in the trip structure, you MUST NOT include a Travel line for that day. Do not invent travel on non-travel days under any circumstances.
+7. If a day is marked "no travel (first city)" in the trip structure, do not include any Travel line at all — not even "Starting city".
+8. Only include a Travel line on days explicitly marked as a travel day in the trip structure.
+9. On travel days, copy the travel information exactly from the Trip structure block above into the Travel line. Do not paraphrase it or write it twice.
+10. Travel distance and time must be consistent. If you state a distance and time between two cities, use the same values everywhere they appear.
+11. On a travel day, all morning activities must be in the departure city. All afternoon and evening activities must be in the arrival city. Never schedule activities in a city the traveller has already left.
+12. If travel is more than 2 hours, keep the day light — 1 or 2 activities only, split across departure and arrival city as per rule 11.
+13. On a non-travel day, only mention the city named in the day heading. Never reference or suggest activities in any other city.
+14. Only suggest a day trip if the city block explicitly lists day trip options AND the city has 2 or more days. Never suggest a day trip for a 1-day city.
+15. Day trips are optional additions to a day — the traveller returns to the main city that evening. They are not overnight stays.
+16. Each full day should have 2-3 activities with a short description of each. Travel-heavy days should have 1-2.
+17. Only use attractions listed in each city's block. Do not invent attractions.
+18. Never repeat the same attraction, restaurant, neighbourhood, or activity across different days. Every recommendation must be unique within the itinerary.
+19. Never write placeholder text like "as per Day N itinerary", "continue from yesterday", or "similar to previous days". Every day must have fully written, unique activities.
 
 ---
 
-EXAMPLE OUTPUT (for a 4-day trip to Rome 2 days, Florence 2 days — do not copy this content, only copy the format):
+EXAMPLE OUTPUT (for a 5-day trip to Rome 2 days, Florence 3 days — do not copy this content, only copy the format):
 
-Day 1 — Rome (arrival)
-Travel: Starting city
+Day 1 — Rome
 - Visit the Colosseum in the morning — one of the greatest surviving examples of Roman architecture, built in 70 AD and once hosting crowds of 80,000 spectators.
 - Explore the Roman Forum in the afternoon, walking through the ruins of temples, triumphal arches, and government buildings that formed the heart of ancient Rome.
 - Stroll through the Trastevere neighbourhood in the evening, a charming tangle of cobblestone streets and ivy-covered buildings with a lively local restaurant scene.
@@ -38,15 +48,19 @@ Day 2 — Rome
 - Afternoon at Castel Sant'Angelo, a towering cylindrical fortress on the banks of the Tiber with sweeping views over the city.
 - Optional day trip: Tivoli (31km, ~26min by train) — known for the Renaissance gardens of Villa d'Este and the ancient ruins of Hadrian's Villa.
 
-Day 3 — Florence (arrival, travel day)
-Travel: ~277km from Rome, ~1h 30min by train — lighter day due to travel.
-- Check in and explore the Piazza del Duomo, dominated by Brunelleschi's iconic red-tiled dome, one of the greatest feats of Renaissance engineering.
-- Evening walk along the Arno river to the Ponte Vecchio, a medieval stone bridge lined with jewellers' shops dating back to 1345.
+Day 3 — Florence (travel day)
+Travel: ~277km from Rome, ~1h 30min by train
+- Morning: explore the Piazza della Repubblica in Rome, a grand 19th-century square built on the site of the ancient Roman forum.
+- Afternoon: check in and walk to the Piazza del Duomo, dominated by Brunelleschi's iconic red-tiled dome, one of the greatest feats of Renaissance engineering.
 
 Day 4 — Florence
 - Morning at the Uffizi Gallery, one of the oldest and most famous art museums in the world, housing Botticelli's Birth of Venus and works by Leonardo and Raphael.
 - Afternoon at Palazzo Vecchio, Florence's imposing medieval town hall with frescoed halls and a tower offering panoramic views over the city.
 - Optional day trip: Siena (85km, ~1h 15min by train) — a beautifully preserved medieval city centred on the famous shell-shaped Piazza del Campo.
+
+Day 5 — Florence
+- Morning walk across the Ponte Vecchio, a medieval stone bridge lined with jewellers' shops dating back to 1345.
+- Afternoon visit to the Boboli Gardens, a monumental example of Italian garden design extending behind the Palazzo Pitti.
 
 ---
 
