@@ -8,7 +8,6 @@ from services.trips_db import get_db, insert_trip, save_itinerary
 
 load_dotenv()
 
-
 def create_trip(cities: list[str], trip_length: int, interests: list[str]) -> tuple[int, str] | None:
     """
     Resolve cities, build the prompt, insert a pending DB row, return (trip_id, prompt).
