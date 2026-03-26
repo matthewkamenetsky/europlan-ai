@@ -39,28 +39,28 @@ STRICT RULES — follow every one of these exactly:
 EXAMPLE OUTPUT (for a 5-day trip to Rome 2 days, Florence 3 days — do not copy this content, only copy the format):
 
 Day 1 — Rome
-- Visit the Colosseum in the morning — one of the greatest surviving examples of Roman architecture, built in 70 AD and once hosting crowds of 80,000 spectators.
-- Explore the Roman Forum in the afternoon, walking through the ruins of temples, triumphal arches, and government buildings that formed the heart of ancient Rome.
-- Stroll through the Trastevere neighbourhood in the evening, a charming tangle of cobblestone streets and ivy-covered buildings with a lively local restaurant scene.
+- Visit the Colosseum in the morning — one of the greatest surviving examples of Roman architecture, built in 70 AD and once hosting crowds of 80,000 spectators. Arrive early to beat the queues and spend time exploring the underground chambers and arena floor.
+- Explore the Roman Forum in the afternoon, walking through the ruins of temples, triumphal arches, and government buildings that formed the beating heart of ancient Rome for over a thousand years.
+- Stroll through the Trastevere neighbourhood in the evening — a charming tangle of cobblestone streets and ivy-covered buildings with a lively local restaurant scene that comes alive after dark.
 
 Day 2 — Rome
-- Morning visit to the Vatican Museums, home to one of the world's greatest art collections including Michelangelo's Sistine Chapel ceiling.
-- Afternoon at Castel Sant'Angelo, a towering cylindrical fortress on the banks of the Tiber with sweeping views over the city.
-- Optional day trip: Tivoli (31km, ~26min by train) — known for the Renaissance gardens of Villa d'Este and the ancient ruins of Hadrian's Villa.
+- Morning visit to the Vatican Museums, home to one of the world's greatest art collections including Michelangelo's Sistine Chapel ceiling, painted between 1508 and 1512 and still breathtaking in person.
+- Afternoon at Castel Sant'Angelo, a towering cylindrical fortress on the banks of the Tiber with sweeping views over the city's rooftops and a fascinating history as mausoleum, castle, and papal refuge.
+- Optional day trip: Tivoli (31km, ~26min by train) — known for the Renaissance gardens of Villa d'Este and the ancient ruins of Hadrian's Villa, one of the largest and most elaborate imperial estates ever built.
 
 Day 3 — Florence (travel day)
 Travel: ~277km from Rome, ~1h 30min by train
-- Morning: explore the Piazza della Repubblica in Rome, a grand 19th-century square built on the site of the ancient Roman forum.
-- Afternoon: check in and walk to the Piazza del Duomo, dominated by Brunelleschi's iconic red-tiled dome, one of the greatest feats of Renaissance engineering.
+- Morning: explore the Piazza della Repubblica in Rome, a grand 19th-century square built on the site of the ancient Roman forum, ringed with elegant arcades, street performers, and historic cafés.
+- Afternoon: check in and walk to the Piazza del Duomo, dominated by Brunelleschi's iconic red-tiled dome — one of the greatest feats of Renaissance engineering, visible from almost every corner of the city.
 
 Day 4 — Florence
-- Morning at the Uffizi Gallery, one of the oldest and most famous art museums in the world, housing Botticelli's Birth of Venus and works by Leonardo and Raphael.
-- Afternoon at Palazzo Vecchio, Florence's imposing medieval town hall with frescoed halls and a tower offering panoramic views over the city.
-- Optional day trip: Siena (85km, ~1h 15min by train) — a beautifully preserved medieval city centred on the famous shell-shaped Piazza del Campo.
+- Morning at the Uffizi Gallery, one of the oldest and most famous art museums in the world, housing Botticelli's Birth of Venus and masterworks by Leonardo, Raphael, and Caravaggio across 45 rooms.
+- Afternoon at Palazzo Vecchio, Florence's imposing medieval town hall with richly frescoed halls and a tower offering sweeping panoramic views over the terracotta rooftops of the city.
+- Optional day trip: Siena (85km, ~1h 15min by train) — a beautifully preserved medieval city centred on the famous shell-shaped Piazza del Campo, where the Palio horse race has been run since the 13th century.
 
 Day 5 — Florence
-- Morning walk across the Ponte Vecchio, a medieval stone bridge lined with jewellers' shops dating back to 1345.
-- Afternoon visit to the Boboli Gardens, a monumental example of Italian garden design extending behind the Palazzo Pitti.
+- Morning walk across the Ponte Vecchio, a medieval stone bridge lined with goldsmiths' and jewellers' shops dating back to 1345, rebuilt after the 1944 wartime destruction of every other bridge in the city.
+- Afternoon visit to the Boboli Gardens, a monumental example of Italian Renaissance garden design extending behind the Palazzo Pitti, with fountains, grottos, and sculpture spread across terraced hillside grounds.
 
 ---
 

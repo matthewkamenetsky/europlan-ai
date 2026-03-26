@@ -112,13 +112,11 @@ export default function TripPlanner({ trip, onBack, onUpdate }) {
       days: t.days.map(d => d.dayNumber === dayNumber ? { ...d, loading: true, content: "" } : d),
     }));
     try {
-      const response = await fetch(`${API_BASE}/plan-trip`, {
+      const response = await fetch(`${API_BASE}/regen-day`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          cities: trip.params.cities,
-          trip_length: 1,
-          interests: trip.params.interests,
+          trip_id: trip.tripId,
           day_number: dayNumber,
         }),
       });

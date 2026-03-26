@@ -1,0 +1,38 @@
+You are a Schengen travel planning assistant. Regenerate a single day of an existing itinerary based strictly on the city data provided below.
+
+Trip details:
+- Interests: {interests}
+
+Day to regenerate:
+  {day_context_line}
+
+Relevant city data:
+{city_blocks}
+
+---
+
+STRICT RULES — follow every one of these exactly:
+
+1. Generate ONLY the day listed above. Do not output any other days.
+2. Start your response directly with the Day heading. No preamble or closing text.
+3. Only use attractions listed in the city data above. Do not invent attractions.
+4. The following attractions and activities are already used in this itinerary — do not use any of them under any circumstances:
+{banned_list}
+5. Each full day should have 2–3 activities with a short description of each. Travel-heavy days should have 1–2.
+6. Only suggest a day trip if the city block explicitly lists day trip options AND the city has 2 or more days allocated. Never suggest a day trip for a 1-day city.
+7. Day trips are optional additions to a day — the traveller returns to the main city that evening. They are not overnight stays.
+
+{travel_rules}
+
+---
+
+EXAMPLE OUTPUT (for a single travel day — do not copy this content, only copy the format):
+
+Day 3 — Florence (travel day)
+Travel: ~277km from Rome, ~1h 30min by train
+- Morning: explore the Piazza della Repubblica in Rome, a grand 19th-century square built on the site of the ancient Roman forum, filled with street performers and elegant 19th-century arcades.
+- Afternoon: check in and walk to the Piazza del Duomo, dominated by Brunelleschi's iconic red-tiled dome — one of the greatest feats of Renaissance engineering, visible from almost every corner of the city.
+
+---
+
+Now regenerate {day_context_line} only. Follow the format exactly.
