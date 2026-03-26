@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, field_validator
 from services.planner import create_trip, create_regen_prompt, plan_trip_stream
-from services.trips_db import save_itinerary, fetch_all_trips, fetch_trip, delete_trip
+from services.trips_db import save_itinerary, update_itinerary, fetch_all_trips, fetch_trip, delete_trip
 
 router = APIRouter()
 executor = ThreadPoolExecutor()
@@ -39,6 +39,9 @@ class TripRequest(BaseModel):
 class RegenDayRequest(BaseModel):
     trip_id: int
     day_number: int
+
+class PatchItineraryRequest(BaseModel):
+    itinerary: str
 
 async def stream_generator(trip_id: int, prompt: str):
     loop = asyncio.get_event_loop()
@@ -103,5 +106,11 @@ def get_trip(trip_id: int):
 @router.delete("/trips/{trip_id}")
 def delete_trip_route(trip_id: int):
     if not delete_trip(trip_id):
+        raise HTTPException(status_code=404, detail="Trip not found.")
+    return {"ok": True}
+
+@router.patch("/trips/{trip_id}")
+def patch_trip(trip_id: int, request: PatchItineraryRequest):
+    if not update_itinerary(trip_id, request.itinerary):
         raise HTTPException(status_code=404, detail="Trip not found.")
     return {"ok": True}

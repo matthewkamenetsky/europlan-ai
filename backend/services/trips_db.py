@@ -27,6 +27,13 @@ def save_itinerary(trip_id: int, itinerary: str):
         conn.execute("UPDATE trips SET itinerary = ? WHERE id = ?", (itinerary, trip_id))
         conn.commit()
 
+def update_itinerary(trip_id: int, itinerary: str) -> bool:
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE trips SET itinerary = ? WHERE id = ?", (itinerary, trip_id))
+        conn.commit()
+        return cursor.rowcount > 0
+
 def fetch_all_trips() -> list[dict]:
     with get_db() as conn:
         conn.row_factory = sqlite3.Row
@@ -71,4 +78,3 @@ def delete_trip(trip_id: int) -> bool:
         cursor.execute("DELETE FROM trips WHERE id = ?", (trip_id,))
         conn.commit()
         return cursor.rowcount > 0
-    

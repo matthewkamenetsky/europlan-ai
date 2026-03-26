@@ -126,14 +126,38 @@ export default function TripPlanner({ trip, onBack, onUpdate }) {
         return;
       }
 
-      let content = "";
+      let newDayContent = "";
       await streamResponse(response, chunk => {
-        content += chunk;
+        newDayContent += chunk;
         onUpdate(t => ({
           ...t,
-          days: t.days.map(d => d.dayNumber === dayNumber ? { ...d, content } : d),
+          days: t.days.map(d => d.dayNumber === dayNumber ? { ...d, content: newDayContent } : d),
         }));
       });
+
+      onUpdate(t => {
+        const updatedDays = t.days.map(d =>
+          d.dayNumber === dayNumber ? { ...d, content: newDayContent, loading: false } : d
+        );
+        const fullItinerary = updatedDays
+          .slice()
+          .sort((a, b) => a.dayNumber - b.dayNumber)
+          .map(d => d.content)
+          .join("\n\n");
+
+        if (t.tripId) {
+          fetch(`${API_BASE}/trips/${t.tripId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ itinerary: fullItinerary }),
+          }).catch(() => {
+            // Non-critical — state is still correct in memory
+          });
+        }
+
+        return { ...t, days: updatedDays };
+      });
+
     } catch {
       setError("Could not connect to the backend.");
     } finally {
