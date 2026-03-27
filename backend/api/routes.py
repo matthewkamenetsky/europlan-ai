@@ -34,7 +34,10 @@ class TripRequest(BaseModel):
     def positive_trip_length(cls, v):
         if v < 1:
             raise ValueError("trip_length must be at least 1.")
+        elif v > 30:
+            raise ValueError(f"trip_length cannot exceed {30}.")
         return v
+    
 
 class RegenDayRequest(BaseModel):
     trip_id: int

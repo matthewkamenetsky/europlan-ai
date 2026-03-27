@@ -9,6 +9,8 @@ const ALL_INTERESTS = [
   "shopping", "viewpoints", "gardens",
 ];
 
+const MAX_DAYS = 30;
+
 const S = {
   input: {
     border: "none", borderBottom: `2px solid ${c.tealBorder}`,
@@ -79,7 +81,7 @@ export default function NewTripModal({ onClose, onCreate }) {
   };
   const handleDaysBlur = () => {
     const n = parseInt(tripLengthStr, 10);
-    setTripLengthStr(isNaN(n) || n < 1 ? "1" : n > 30 ? "30" : String(n));
+    setTripLengthStr(isNaN(n) || n < 1 ? "1" : n > MAX_DAYS ? String(MAX_DAYS) : String(n));
   };
 
   const handleCreate = useCallback(() => {
@@ -88,6 +90,7 @@ export default function NewTripModal({ onClose, onCreate }) {
     if (!ranked.length)      return setError("Please select at least one interest.");
     const tripLength = parseInt(tripLengthStr, 10);
     if (isNaN(tripLength) || tripLength < 1) return setError("Please enter a valid number of days.");
+    if (tripLength > MAX_DAYS) return setError(`Trips are limited to ${MAX_DAYS} days.`);
     setError("");
     onCreate({ cities: validCities, tripLength, interests: ranked });
   }, [cities, ranked, tripLengthStr, onCreate]);
@@ -107,8 +110,8 @@ export default function NewTripModal({ onClose, onCreate }) {
   const displayDays = parseInt(tripLengthStr, 10);
 
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(28,30,30,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "20px" }}>
-      <div onClick={e => e.stopPropagation()} style={{ backgroundColor: c.white, borderRadius: "16px", padding: "36px 40px", width: "100%", maxWidth: "560px", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 24px 64px rgba(0,0,0,0.15)" }}>
+    <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(28,30,30,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "20px" }}>
+      <div style={{ backgroundColor: c.white, borderRadius: "16px", padding: "36px 40px", width: "100%", maxWidth: "560px", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 24px 64px rgba(0,0,0,0.15)" }}>
 
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "28px" }}>
@@ -147,7 +150,12 @@ export default function NewTripModal({ onClose, onCreate }) {
             onChange={handleDaysChange}
             onBlur={handleDaysBlur}
           />
-          <span>{isNaN(displayDays) || displayDays !== 1 ? "days." : "day."}</span>
+          <span>
+            {isNaN(displayDays) || displayDays !== 1 ? "days" : "day"}
+            {!isNaN(displayDays) && displayDays === MAX_DAYS && (
+              <span style={{ fontSize: "11px", fontFamily: f.sans, fontWeight: 400, color: c.stoneLight, marginLeft: "6px" }}>(max)</span>
+            )}.
+          </span>
         </div>
 
         <div style={{ borderTop: `1px solid ${c.sandDark}`, marginBottom: "24px" }} />
