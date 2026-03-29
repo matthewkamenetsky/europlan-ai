@@ -19,18 +19,24 @@ def _resolve_trip_context(cities: list[str], trip_length: int, interests: list[s
             return None
         resolved.append(city)
 
-    city_attractions = {}
+    attraction_counts_raw = []
     for name, country_code, lat, lon in resolved:
-        city_attractions[name] = get_attractions(lat, lon, interests)
-        print(f"DEBUG: {name} got {len(city_attractions[name])} attractions")
+        preview = get_attractions(lat, lon, interests, limit=60)
+        attraction_counts_raw.append((name, len(preview)))
+        print(f"DEBUG: {name} preview count: {len(preview)}")
 
-    attraction_counts = [(name, len(city_attractions[name])) for name, *_ in resolved]
-    day_allocation = allocate_days(attraction_counts, trip_length)
+    day_allocation = allocate_days(attraction_counts_raw, trip_length)
     ordered = find_best_order(resolved)
     main_city_names = [c[0] for c in ordered]
 
     print(f"DEBUG: Day allocation: {day_allocation}")
     print(f"DEBUG: Optimal order: {main_city_names}")
+
+    city_attractions = {}
+    for name, country_code, lat, lon in resolved:
+        days = day_allocation.get(name, 1)
+        city_attractions[name] = get_attractions(lat, lon, interests, days_in_city=days)
+        print(f"DEBUG: {name} ({days}d) got {len(city_attractions[name])} attractions")
 
     return dict(
         resolved=resolved,

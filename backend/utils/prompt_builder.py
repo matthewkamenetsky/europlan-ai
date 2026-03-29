@@ -1,12 +1,25 @@
 import os
 from utils.travel_utils import haversine, format_travel_time
-from services.geodata import get_day_trip_candidates
+from services.geodata import get_day_trip_candidates, get_attractions, INTEREST_MAP
 
 def build_city_blocks(ordered: list, day_allocation: dict[str, int], city_attractions: dict, main_city_names: list[str], interests: list[str], db) -> str:
     blocks = []
     for idx, (name, country_code, lat, lon) in enumerate(ordered):
         days = day_allocation.get(name, 1)
-        attractions_str = ", ".join(city_attractions[name]) or "No specific attractions found"
+
+        if interests:
+            attraction_lines = []
+            seen = set()
+            for rank, interest in enumerate(interests):
+                interest_attractions = get_attractions(lat, lon, [interest], days_in_city=days)
+                unique = [a for a in interest_attractions if a not in seen]
+                seen.update(unique)
+                if unique:
+                    label = f"[#{rank + 1} priority — {interest}]"
+                    attraction_lines.append(f"{label}: {', '.join(unique)}")
+            attractions_str = "\n    ".join(attraction_lines) if attraction_lines else "No specific attractions found"
+        else:
+            attractions_str = ", ".join(city_attractions[name]) or "No specific attractions found"
 
         if days >= 2:
             day_trips = get_day_trip_candidates(lat, lon, exclude_names=main_city_names, interests=interests, db=db)
@@ -26,7 +39,8 @@ def build_city_blocks(ordered: list, day_allocation: dict[str, int], city_attrac
         blocks.append(
             f"- {name} ({country_code}) — {days} day(s)\n"
             f"  Travel from previous: {travel_note}\n"
-            f"  Attractions: {attractions_str}\n"
+            f"  Attractions (listed in priority order — use higher-priority sections first):\n"
+            f"    {attractions_str}\n"
             f"  Day trip options (only suggest if days allow): {day_trip_str}"
         )
     return "\n".join(blocks)

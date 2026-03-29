@@ -24,6 +24,12 @@ INTEREST_MAP = {
 }
 
 
+def attraction_limit(num_interests: int, days_in_city: int = 1) -> int:
+    """Dynamic attraction cap: scales with interest count and days allocated.
+    Floor of 5, ceiling of 60 to keep prompts sane."""
+    return min(10 + num_interests * 3 + days_in_city * 5, 60)
+
+
 def get_city(city_name: str, db):
     cleaned = city_name.strip()
     if not cleaned:
@@ -39,7 +45,9 @@ def get_city(city_name: str, db):
     return cursor.fetchone()
 
 
-def get_attractions(lat: float, lon: float, interests: list[str], radius: int = 10000, limit: int = 20) -> list[str]:
+def get_attractions(lat: float, lon: float, interests: list[str], radius: int = 10000, limit: int = None, days_in_city: int = 1) -> list[str]:
+    if limit is None:
+        limit = attraction_limit(len(interests), days_in_city)
     kinds = ",".join([INTEREST_MAP[i] for i in interests if i in INTEREST_MAP]) or "cultural,historic,museums"
     try:
         response = requests.get(
