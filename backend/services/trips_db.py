@@ -16,7 +16,7 @@ def insert_trip(name: str, cities: list[str], trip_length: int, interests: list[
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO trips (name, cities, trip_length, interests, itinerary) VALUES (?, ?, ?, ?, NULL)",
+            "INSERT INTO trips (name, cities, trip_length, interests, itinerary, conversation) VALUES (?, ?, ?, ?, NULL, NULL)",
             (name, json.dumps(cities), trip_length, json.dumps(interests)),
         )
         conn.commit()
@@ -31,6 +31,28 @@ def update_itinerary(trip_id: int, itinerary: str) -> bool:
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("UPDATE trips SET itinerary = ? WHERE id = ?", (itinerary, trip_id))
+        conn.commit()
+        return cursor.rowcount > 0
+
+def fetch_conversation(trip_id: int) -> list[dict]:
+    """Returns conversation history as a list of {role, content} dicts. Empty list if none."""
+    with get_db() as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("SELECT conversation FROM trips WHERE id = ?", (trip_id,))
+        row = cursor.fetchone()
+        if row is None or row["conversation"] is None:
+            return []
+        return json.loads(row["conversation"])
+
+def update_conversation(trip_id: int, messages: list[dict]) -> bool:
+    """Overwrites the full conversation history for a trip."""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE trips SET conversation = ? WHERE id = ?",
+            (json.dumps(messages), trip_id),
+        )
         conn.commit()
         return cursor.rowcount > 0
 
@@ -69,6 +91,7 @@ def fetch_trip(trip_id: int) -> dict | None:
             "trip_length": row["trip_length"],
             "interests": json.loads(row["interests"]),
             "itinerary": row["itinerary"],
+            "conversation": json.loads(row["conversation"]) if row["conversation"] else [],
             "created_at": row["created_at"],
         }
 

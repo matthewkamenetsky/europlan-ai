@@ -9,6 +9,7 @@ app.add_middleware(
     allow_origins=["http://localhost:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Trip-Id"],
 )
 
 app.include_router(router)

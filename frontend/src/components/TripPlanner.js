@@ -41,8 +41,8 @@ function TripNav({ label, totalDays, loading, onBack, onRegenerate }) {
   );
 }
 
-function ChatBar({ inputRef, value, onChange, onKeyDown, onSend, referencedDay, onClearRef }) {
-  const canSend = value.trim();
+function ChatBar({ inputRef, value, onChange, onKeyDown, onSend, referencedDay, onClearRef, loading }) {
+  const canSend = value.trim() && !loading;
   return (
     <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 20, backgroundColor: c.white, borderTop: `1px solid ${c.sandBorder}`, padding: "12px 24px" }}>
       <div style={{ maxWidth: "720px", margin: "0 auto" }}>
@@ -64,7 +64,7 @@ function ChatBar({ inputRef, value, onChange, onKeyDown, onSend, referencedDay, 
             onInput={e => { e.target.style.height = "auto"; e.target.style.height = e.target.scrollHeight + "px"; }}
           />
           <button onClick={onSend} disabled={!canSend} style={{ padding: "10px 16px", borderRadius: "10px", border: "none", backgroundColor: canSend ? c.teal : c.sandDark, color: canSend ? c.white : c.stoneFaint, fontFamily: f.sans, fontSize: "13px", fontWeight: 600, cursor: canSend ? "pointer" : "default", flexShrink: 0, transition: "background-color 0.15s" }}>
-            Send
+            {loading ? "…" : "Send"}
           </button>
         </div>
       </div>
@@ -72,15 +72,31 @@ function ChatBar({ inputRef, value, onChange, onKeyDown, onSend, referencedDay, 
   );
 }
 
-export default function TripPlanner({ trip, onBack, onUpdate }) {
+const ITINERARY_MARKER = "UPDATED_ITINERARY:";
+
+export default function TripPlanner({ trip, onBack, onUpdate, onTripServerIdResolved }) {
   const [globalLoading, setGlobalLoading] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
   const [error, setError] = useState("");
   const [chatInput, setChatInput] = useState("");
   const [referencedDay, setReferencedDay] = useState(null);
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(() => (Array.isArray(trip.conversation) ? trip.conversation : []));
   const hasGenerated = useRef(false);
   const chatInputRef = useRef(null);
+  const messagesEndRef = useRef(null);
   const totalDays = trip.params.tripLength;
+
+  const conversationSig = JSON.stringify(trip.conversation ?? []);
+
+  useEffect(() => {
+    const c = trip.conversation;
+    setMessages(Array.isArray(c) ? c : []);
+    // conversationSig encodes trip.conversation content (stable across new array refs with same data)
+  }, [trip.id, trip.tripId, conversationSig]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const generateAll = useCallback(async () => {
     setError("");
@@ -93,8 +109,11 @@ export default function TripPlanner({ trip, onBack, onUpdate }) {
         body: JSON.stringify({ cities: trip.params.cities, trip_length: trip.params.tripLength, interests: trip.params.interests }),
       });
       if (!response.ok) { setError((await response.json()).detail || "Something went wrong."); return; }
-      const tripId = response.headers.get("X-Trip-Id");
-      if (tripId) onUpdate(t => ({ ...t, tripId: parseInt(tripId) }));
+      const tripIdHeader = response.headers.get("X-Trip-Id");
+      if (tripIdHeader && onTripServerIdResolved) {
+        const sid = parseInt(tripIdHeader, 10);
+        if (!Number.isNaN(sid)) onTripServerIdResolved(sid, trip.id);
+      }
       let fullText = "";
       await streamResponse(response, chunk => {
         fullText += chunk;
@@ -102,7 +121,7 @@ export default function TripPlanner({ trip, onBack, onUpdate }) {
       });
     } catch { setError("Could not connect to the backend."); }
     finally { setGlobalLoading(false); onUpdate(t => ({ ...t, loading: false })); }
-  }, [trip.params, onUpdate]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [trip.params, trip.id, onUpdate, onTripServerIdResolved]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!hasGenerated.current && trip.days.length === 0) { hasGenerated.current = true; generateAll(); }
@@ -133,12 +152,60 @@ export default function TripPlanner({ trip, onBack, onUpdate }) {
     finally { setDay({ loading: false }); }
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const text = chatInput.trim();
-    if (!text) return;
-    setMessages(prev => [...prev, { role: "user", text, dayRef: referencedDay }]);
+    if (!text || chatLoading) return;
+
+    const dayRef = referencedDay;
+    const userMsg = { role: "user", content: text, dayRef };
+    setMessages(prev => [...prev, userMsg]);
     setChatInput("");
     setReferencedDay(null);
+    setChatLoading(true);
+    setError("");
+
+    // Add empty assistant message that will stream in
+    setMessages(prev => [...prev, { role: "assistant", content: "" }]);
+
+    try {
+      const response = await fetch(`${API_BASE}/chat/${trip.tripId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, day_ref: dayRef }),
+      });
+
+      if (!response.ok) { setError("Chat request failed."); return; }
+
+      let fullResponse = "";
+      await streamResponse(response, chunk => {
+        fullResponse += chunk;
+
+        // Hide the itinerary block from the chat bubble
+        const displayText = fullResponse.includes(ITINERARY_MARKER)
+          ? fullResponse.split(ITINERARY_MARKER)[0].trim()
+          : fullResponse;
+
+        setMessages(prev => prev.map((m, i) =>
+          i === prev.length - 1 ? { ...m, content: displayText } : m
+        ));
+      });
+
+      // If the LLM updated the itinerary, re-parse and update day cards
+      if (fullResponse.includes(ITINERARY_MARKER)) {
+        const updatedItinerary = fullResponse.split(ITINERARY_MARKER)[1].trim();
+        if (updatedItinerary) {
+          const parsed = parseDays(updatedItinerary, trip.params.tripLength);
+          onUpdate(t => ({ ...t, days: parsed }));
+        }
+      }
+
+      setMessages(prev => {
+        onUpdate(t => ({ ...t, conversation: prev }));
+        return prev;
+      });
+
+    } catch { setError("Could not connect to the backend."); }
+    finally { setChatLoading(false); }
   };
 
   return (
@@ -161,18 +228,48 @@ export default function TripPlanner({ trip, onBack, onUpdate }) {
           {Array.from({ length: totalDays }, (_, i) => i + 1).map(n => {
             const data = trip.days.find(d => d.dayNumber === n);
             if (!data && !globalLoading) return null;
-            return <DayCard key={n} dayNumber={n} data={data} onRegenerate={() => regenerateDay(n)} onReply={() => { setReferencedDay(n); chatInputRef.current?.focus(); }} />;
+            return (
+              <DayCard
+                key={n} dayNumber={n} data={data}
+                onRegenerate={() => regenerateDay(n)}
+                onReply={() => { setReferencedDay(n); chatInputRef.current?.focus(); }}
+              />
+            );
           })}
         </div>
 
+        {/* Chat history */}
         {messages.length > 0 && (
-          <div style={{ marginTop: "32px", display: "flex", flexDirection: "column", gap: "10px" }}>
+          <div style={{ marginTop: "32px", display: "flex", flexDirection: "column", gap: "12px" }}>
             {messages.map((msg, i) => (
-              <div key={i} style={{ alignSelf: "flex-end", maxWidth: "80%" }}>
-                {msg.dayRef && <div style={{ fontSize: "10px", fontFamily: f.mono, color: c.teal, marginBottom: "4px", letterSpacing: "0.08em" }}>RE: DAY {msg.dayRef}</div>}
-                <div style={{ backgroundColor: c.teal, color: c.white, borderRadius: "12px 12px 2px 12px", padding: "10px 14px", fontFamily: f.body, fontSize: "14px", lineHeight: 1.6 }}>{msg.text}</div>
+              <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
+                <div style={{ maxWidth: "80%" }}>
+                  {msg.dayRef && (
+                    <div style={{ fontSize: "10px", fontFamily: f.mono, color: c.teal, marginBottom: "4px", letterSpacing: "0.08em", textAlign: "right" }}>
+                      RE: DAY {msg.dayRef}
+                    </div>
+                  )}
+                  <div style={{
+                    backgroundColor: msg.role === "user" ? c.teal : c.white,
+                    color: msg.role === "user" ? c.white : c.stoneMid,
+                    border: msg.role === "assistant" ? `1px solid ${c.sandBorder}` : "none",
+                    borderRadius: msg.role === "user" ? "12px 12px 2px 12px" : "12px 12px 12px 2px",
+                    padding: "10px 14px",
+                    fontFamily: f.body,
+                    fontSize: "14px",
+                    lineHeight: 1.6,
+                  }}>
+                    {msg.content || (
+                      <span style={{ display: "flex", alignItems: "center", gap: "6px", color: c.stoneFaint }}>
+                        <div style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: c.teal, animation: "ep-pulse 1s infinite" }} />
+                        Thinking…
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             ))}
+            <div ref={messagesEndRef} />
           </div>
         )}
       </div>
@@ -182,7 +279,9 @@ export default function TripPlanner({ trip, onBack, onUpdate }) {
         onChange={e => setChatInput(e.target.value)}
         onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
         onSend={handleSend}
-        referencedDay={referencedDay} onClearRef={() => setReferencedDay(null)}
+        referencedDay={referencedDay}
+        onClearRef={() => setReferencedDay(null)}
+        loading={chatLoading}
       />
     </div>
   );

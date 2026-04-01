@@ -1,10 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import TripsOverview from "./components/TripsOverview";
 import TripPlanner from "./components/TripPlanner";
 import { parseDays } from "./utils/parseDays";
 import { c, f } from "./styles";
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8000";
+
+function tryParseJsonArray(s) {
+  try {
+    const v = JSON.parse(s);
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+
+function idsMatch(a, b) {
+  if (a === b) return true;
+  if (a == null || b == null) return false;
+  return Number(a) === Number(b);
+}
 
 function normaliseTrip(raw) {
   return {
@@ -18,6 +33,7 @@ function normaliseTrip(raw) {
     },
     days: [],
     loading: false,
+    conversation: Array.isArray(raw.conversation) ? raw.conversation : [],
   };
 }
 
@@ -26,13 +42,20 @@ export default function App() {
   const [trips, setTrips] = useState(null);
   const [activeTripId, setActiveTripId] = useState(null);
   const [activeTrip, setActiveTrip] = useState(null);
+  const activeTripIdRef = useRef(null);
+  activeTripIdRef.current = activeTripId;
 
-  useEffect(() => {
+  const refreshTrips = () => {
     fetch(`${API_BASE}/trips`)
       .then(r => r.json())
       .then(data => setTrips(data.map(normaliseTrip)))
       .catch(() => setTrips([]));
-  }, []);
+  };
+
+  useEffect(() => {
+    if (view !== "overview") return;
+    refreshTrips();
+  }, [view]);
 
   const createTrip = (params) => {
     const tempId = Date.now();
@@ -43,6 +66,7 @@ export default function App() {
       params,
       days: [],
       loading: false,
+      conversation: [],
     };
     setTrips(prev => [...(prev || []), newTrip]);
     setActiveTrip(newTrip);
@@ -51,23 +75,92 @@ export default function App() {
     return tempId;
   };
 
-  const updateTrip = (id, updater) => {
-    setTrips(prev => (prev || []).map(t => t.id === id ? updater(t) : t));
-    setActiveTrip(prev => prev?.id === id ? updater(prev) : prev);
+  const updateTripForActive = (updater) => {
+    const key = activeTripIdRef.current;
+    setTrips(prev => (prev || []).map(t => (t.id === key ? updater(t) : t)));
+    setActiveTrip(prev => (prev && prev.id === key ? updater(prev) : prev));
+  };
+
+  const resolveTripServerId = (serverId, clientId) => {
+    setTrips(prev =>
+      (prev || []).map(t =>
+        t.id === clientId ? { ...t, id: serverId, tripId: serverId } : t,
+      ),
+    );
+    setActiveTrip(prev =>
+      prev && prev.id === clientId ? { ...prev, id: serverId, tripId: serverId } : prev,
+    );
+    setActiveTripId(prev => (prev === clientId ? serverId : prev));
   };
 
   const openTrip = async (id) => {
+    const idNum = typeof id === "string" ? parseInt(id, 10) : id;
+    const list = trips || [];
+    const local = list.find(
+      t => idsMatch(t.id, id) || idsMatch(t.id, idNum) || idsMatch(t.tripId, id) || idsMatch(t.tripId, idNum),
+    );
+    let fetchId = Number.isNaN(idNum) ? id : idNum;
+    if (local?.tripId != null && !idsMatch(local.id, local.tripId) && (idsMatch(local.id, id) || idsMatch(local.id, idNum))) {
+      fetchId = local.tripId;
+    }
+
     try {
-      const r = await fetch(`${API_BASE}/trips/${id}`);
+      let r = await fetch(`${API_BASE}/trips/${fetchId}`);
+      if (!r.ok && local?.tripId != null && !idsMatch(fetchId, local.tripId)) {
+        r = await fetch(`${API_BASE}/trips/${local.tripId}`);
+      }
+      if (!r.ok) {
+        refreshTrips();
+        const base = local || null;
+        setActiveTrip(base);
+        setActiveTripId(id);
+        setView("planner");
+        return;
+      }
       const data = await r.json();
-      const base = (trips || []).find(t => t.id === id) || normaliseTrip(data);
-      const trip = { ...base };
+      const serverId = data.id;
+
+      const rawConv = data.conversation;
+      let conversation = [];
+      if (Array.isArray(rawConv)) {
+        conversation = rawConv;
+      } else if (typeof rawConv === "string") {
+        conversation = tryParseJsonArray(rawConv);
+      }
+
+      const trip = {
+        id: serverId,
+        tripId: serverId,
+        label: data.name,
+        params: {
+          cities: data.cities,
+          tripLength: data.trip_length,
+          interests: data.interests,
+        },
+        days: [],
+        loading: false,
+        conversation,
+      };
       if (data.itinerary) {
         trip.days = parseDays(data.itinerary, data.trip_length);
       }
+
+      setTrips(prev => {
+        const p = prev || [];
+        const idx = p.findIndex(
+          t => idsMatch(t.id, id) || idsMatch(t.id, serverId) || idsMatch(t.tripId, serverId),
+        );
+        if (idx === -1) {
+          return [...p, trip];
+        }
+        return p.map((t, i) => (i === idx ? trip : t));
+      });
       setActiveTrip(trip);
+      setActiveTripId(serverId);
+      setView("planner");
+      return;
     } catch {
-      const base = (trips || []).find(t => t.id === id) || null;
+      const base = list.find(t => idsMatch(t.id, id)) || null;
       setActiveTrip(base);
     }
     setActiveTripId(id);
@@ -121,7 +214,8 @@ export default function App() {
         <TripPlanner
           trip={activeTrip}
           onBack={() => { setView("overview"); setActiveTrip(null); }}
-          onUpdate={(updater) => updateTrip(activeTripId, updater)}
+          onUpdate={updateTripForActive}
+          onTripServerIdResolved={resolveTripServerId}
         />
       )}
     </div>

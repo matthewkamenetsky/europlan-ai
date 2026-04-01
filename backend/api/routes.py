@@ -4,6 +4,8 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, field_validator
 from services.planner import create_trip, create_regen_prompt, plan_trip_stream
+from services.critic import build_critique
+from services.chat import chat_turn_stream
 from services.trips_db import save_itinerary, update_itinerary, fetch_all_trips, fetch_trip, delete_trip
 
 router = APIRouter()
@@ -34,10 +36,9 @@ class TripRequest(BaseModel):
     def positive_trip_length(cls, v):
         if v < 1:
             raise ValueError("trip_length must be at least 1.")
-        elif v > 30:
-            raise ValueError(f"trip_length cannot exceed {30}.")
+        if v > 28:
+            raise ValueError("trip_length cannot exceed 28 days.")
         return v
-    
 
 class RegenDayRequest(BaseModel):
     trip_id: int
@@ -45,6 +46,10 @@ class RegenDayRequest(BaseModel):
 
 class PatchItineraryRequest(BaseModel):
     itinerary: str
+
+class ChatRequest(BaseModel):
+    message: str
+    day_ref: int | None = None
 
 async def stream_generator(trip_id: int, prompt: str):
     loop = asyncio.get_event_loop()
@@ -64,6 +69,15 @@ async def stream_generator(trip_id: int, prompt: str):
 async def stream_regen(prompt: str):
     loop = asyncio.get_event_loop()
     gen = plan_trip_stream(prompt)
+
+    while True:
+        token = await loop.run_in_executor(executor, _next, gen)
+        if token is _DONE:
+            break
+        yield token
+
+async def stream_chat(gen):
+    loop = asyncio.get_event_loop()
 
     while True:
         token = await loop.run_in_executor(executor, _next, gen)
@@ -95,6 +109,18 @@ async def regen_day(request: RegenDayRequest):
         media_type="text/plain",
     )
 
+@router.post("/chat/{trip_id}")
+async def chat(trip_id: int, request: ChatRequest):
+    gen = chat_turn_stream(trip_id, request.message, request.day_ref)
+    if gen is None:
+        raise HTTPException(status_code=404, detail="Trip not found.")
+
+    return StreamingResponse(
+        stream_chat(gen),
+        media_type="text/plain",
+        headers={"X-Trip-Id": str(trip_id)},
+    )
+
 @router.get("/trips")
 def get_trips():
     return fetch_all_trips()
@@ -117,3 +143,13 @@ def patch_trip(trip_id: int, request: PatchItineraryRequest):
     if not update_itinerary(trip_id, request.itinerary):
         raise HTTPException(status_code=404, detail="Trip not found.")
     return {"ok": True}
+
+@router.post("/critique-trip/{trip_id}")
+async def critique_trip(trip_id: int):
+    loop = asyncio.get_event_loop()
+    critique = await loop.run_in_executor(executor, build_critique, trip_id)
+    if critique is None:
+        raise HTTPException(status_code=404, detail="Trip not found or itinerary not yet generated.")
+    if "error" in critique:
+        raise HTTPException(status_code=500, detail=critique["error"])
+    return critique
