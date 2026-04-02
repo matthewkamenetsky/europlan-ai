@@ -2,7 +2,7 @@ import os
 import json
 from typing import Generator
 from dotenv import load_dotenv
-from llm.ollama_client import stream_llm
+from llm.client import stream_completion
 from services.geodata import get_city, get_attractions, allocate_days, find_best_order
 from utils.prompt_builder import build_city_blocks, build_trip_structure, build_regen_prompt
 from services.trips_db import get_db, insert_trip, save_itinerary, fetch_trip
@@ -107,5 +107,5 @@ def create_regen_prompt(trip_id: int, day_number: int) -> str | None:
 def plan_trip_stream(prompt: str) -> Generator[str, None, None]:
     """Stream the LLM response for a pre-built prompt."""
     print("DEBUG: About to call LLM...")
-    yield from stream_llm(prompt)
+    yield from stream_completion(prompt)
     print("DEBUG: LLM stream finished")

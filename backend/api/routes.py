@@ -6,7 +6,7 @@ from pydantic import BaseModel, field_validator
 from services.planner import create_trip, create_regen_prompt, plan_trip_stream
 from services.critic import build_critique
 from services.chat import chat_turn_stream
-from services.trips_db import save_itinerary, update_itinerary, fetch_all_trips, fetch_trip, delete_trip
+from services.trips_db import save_itinerary, update_itinerary, update_conversation, fetch_all_trips, fetch_trip, delete_trip
 
 router = APIRouter()
 executor = ThreadPoolExecutor()
@@ -44,8 +44,9 @@ class RegenDayRequest(BaseModel):
     trip_id: int
     day_number: int
 
-class PatchItineraryRequest(BaseModel):
-    itinerary: str
+class PatchTripRequest(BaseModel):
+    itinerary: str | None = None
+    conversation: list[dict] | None = None
 
 class ChatRequest(BaseModel):
     message: str
@@ -139,9 +140,15 @@ def delete_trip_route(trip_id: int):
     return {"ok": True}
 
 @router.patch("/trips/{trip_id}")
-def patch_trip(trip_id: int, request: PatchItineraryRequest):
-    if not update_itinerary(trip_id, request.itinerary):
-        raise HTTPException(status_code=404, detail="Trip not found.")
+def patch_trip(trip_id: int, request: PatchTripRequest):
+    if request.itinerary is not None:
+        if not update_itinerary(trip_id, request.itinerary):
+            raise HTTPException(status_code=404, detail="Trip not found.")
+
+    if request.conversation is not None:
+        if not update_conversation(trip_id, request.conversation):
+            raise HTTPException(status_code=404, detail="Trip not found.")
+
     return {"ok": True}
 
 @router.post("/critique-trip/{trip_id}")

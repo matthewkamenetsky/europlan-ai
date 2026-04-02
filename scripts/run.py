@@ -11,8 +11,6 @@ def main():
     ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     os.chdir(ROOT)
 
-    subprocess.run("ollama pull qwen2.5:3b", shell=True)
-
     backend = run(
         f"{sys.executable} -m uvicorn main:app --reload",
         cwd=os.path.join(ROOT, "backend")
