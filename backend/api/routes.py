@@ -23,6 +23,7 @@ class TripRequest(BaseModel):
     cities: list[str]
     trip_length: int
     interests: list[str]
+    trip_id: int | None = None
 
     @field_validator("cities")
     @classmethod
@@ -65,7 +66,7 @@ async def stream_generator(trip_id: int, prompt: str):
         yield token
 
     full_itinerary = "".join(accumulator)
-    await loop.run_in_executor(executor, save_itinerary, trip_id, full_itinerary)
+    await loop.run_in_executor(executor, update_itinerary, trip_id, full_itinerary)
 
 async def stream_regen(prompt: str):
     loop = asyncio.get_event_loop()
@@ -88,7 +89,7 @@ async def stream_chat(gen):
 
 @router.post("/plan-trip")
 async def plan_trip(request: TripRequest):
-    result = create_trip(request.cities, request.trip_length, request.interests)
+    result = create_trip(request.cities, request.trip_length, request.interests, existing_trip_id=request.trip_id)
     if result is None:
         raise HTTPException(status_code=404, detail="One or more cities could not be found.")
 

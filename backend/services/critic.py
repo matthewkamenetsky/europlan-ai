@@ -65,14 +65,25 @@ def build_critique(trip_id: int) -> dict | None:
     if not resolved:
         return None
 
-    # Build day allocation from resolved cities (same order as stored)
-    # We use a simple proportional allocation matching what the planner used
-    from services.geodata import allocate_days
-    attraction_counts = [(name, 10) for name, *_ in resolved]  # neutral counts — allocation was already decided at plan time
-    day_allocation = allocate_days([(c, 10) for c in cities], trip_length)
+    # Derive actual day allocation by counting "Day N — CityName" headings in the
+    # itinerary. This is the ground truth — re-running allocate_days here would
+    # produce wrong numbers because it has no access to the original attraction counts.
+    import re
+    day_alloc_dict: dict[str, int] = {city: 0 for city in cities}
+    for line in itinerary.splitlines():
+        m = re.match(r"^Day\s+\d+\s+[—–-]+\s+(.+?)(?:\s*\(travel day\))?$", line.strip(), re.IGNORECASE)
+        if m:
+            heading_city = m.group(1).strip()
+            # Match heading city to the stored city list (case-insensitive, partial match)
+            for city in cities:
+                if city.lower() in heading_city.lower() or heading_city.lower() in city.lower():
+                    day_alloc_dict[city] = day_alloc_dict.get(city, 0) + 1
+                    break
 
-    # Rebuild as dict keyed by city name
-    day_alloc_dict = {city: day_allocation.get(city, 1) for city in cities}
+    # Fall back to 1 for any city that parsed as 0 (shouldn't happen with a valid itinerary)
+    for city in cities:
+        if day_alloc_dict[city] == 0:
+            day_alloc_dict[city] = 1
 
     transport_legs = _build_transport_legs(resolved, day_alloc_dict)
     transport_legs_str = _format_transport_legs(transport_legs)
@@ -88,13 +99,9 @@ def build_critique(trip_id: int) -> dict | None:
             itinerary=itinerary,
         )
 
-    print("DEBUG: Calling critic LLM...")
-
     # Collect full response (critic is not streamed)
     tokens = list(stream_completion(prompt))
     raw = "".join(tokens).strip()
-
-    print(f"DEBUG: Critic raw response (first 200 chars): {raw[:200]}")
 
     # Strip markdown fences if the LLM added them despite instructions
     if raw.startswith("```"):
@@ -106,8 +113,6 @@ def build_critique(trip_id: int) -> dict | None:
     try:
         critique = json.loads(raw)
     except json.JSONDecodeError as e:
-        print(f"DEBUG: Failed to parse critic JSON: {e}")
-        print(f"DEBUG: Raw response: {raw}")
         return {
             "error": "Critic LLM returned invalid JSON.",
             "raw": raw,

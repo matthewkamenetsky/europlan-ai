@@ -82,7 +82,6 @@ def build_regen_prompt(
         if cleaned.startswith(f"Day {day_number}"):
             day_context_line = cleaned
             break
-    print(f"DEBUG: day_context_line='{day_context_line}'")
 
     is_travel_day = "Travel" in day_context_line
     if is_travel_day:
@@ -110,7 +109,6 @@ def build_regen_prompt(
                 if name and len(name) > 4:
                     banned_items.append(name)
     banned_list = "\n".join(f"- {item}" for item in banned_items) if banned_items else "- (none yet)"
-    print(f"DEBUG: Banned list has {len(banned_items)} items")
 
     if is_travel_day:
         travel_rules = (
@@ -139,5 +137,4 @@ def build_regen_prompt(
             banned_list=banned_list,
         )
 
-    print(f"DEBUG: Regen prompt built for Day {day_number}: {day_context_line}, travel={is_travel_day}")
     return prompt

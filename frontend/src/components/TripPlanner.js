@@ -76,7 +76,12 @@ export default function TripPlanner({ trip, onBack, onUpdate, onTripServerIdReso
       const res = await fetch(`${API_BASE}/plan-trip`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cities: trip.params.cities, trip_length: trip.params.tripLength, interests: trip.params.interests }),
+        body: JSON.stringify({
+          cities: trip.params.cities,
+          trip_length: trip.params.tripLength,
+          interests: trip.params.interests,
+          ...(trip.tripId ? { trip_id: trip.tripId } : {}),
+        }),
       });
       if (!res.ok) { setError((await res.json()).detail || "Something went wrong."); return; }
       const sid = parseInt(res.headers.get("X-Trip-Id"), 10);

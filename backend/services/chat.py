@@ -28,8 +28,6 @@ def chat_turn_stream(trip_id: int, user_message: str, day_ref: int | None) -> Ge
     messages += history
     messages.append({"role": "user", "content": user_content})
 
-    print(f"DEBUG: Chat turn for trip {trip_id}, day_ref={day_ref}, history_len={len(history)}")
-
     full_response = []
 
     def _generate():
@@ -49,6 +47,5 @@ def chat_turn_stream(trip_id: int, user_message: str, day_ref: int | None) -> Ge
             updated = response_text.split("UPDATED_ITINERARY:", 1)[1].strip()
             if updated:
                 update_itinerary(trip_id, updated)
-                print(f"DEBUG: Itinerary updated via chat for trip {trip_id}")
 
     return _generate()
