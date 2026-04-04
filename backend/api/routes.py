@@ -1,9 +1,10 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel, field_validator
 from services.planner import create_trip, create_regen_prompt, plan_trip_stream
+from services.planner_mcp import plan_trip_mcp
 from services.critic import build_critique
 from services.chat import chat_turn_stream
 from services.trips_db import save_itinerary, update_itinerary, update_conversation, fetch_all_trips, fetch_trip, delete_trip
@@ -97,6 +98,60 @@ async def plan_trip(request: TripRequest):
     return StreamingResponse(
         stream_generator(trip_id, prompt),
         media_type="text/plain",
+        headers={"X-Trip-Id": str(trip_id)},
+    )
+
+
+class McpTripRequest(BaseModel):
+    cities: list[str]
+    trip_length: int
+    interests: list[str]
+    trip_id: int | None = None
+
+    @field_validator("cities")
+    @classmethod
+    def at_least_one_city(cls, v):
+        if not v:
+            raise ValueError("At least one city must be provided.")
+        return v
+
+    @field_validator("trip_length")
+    @classmethod
+    def positive_trip_length(cls, v):
+        if v < 1:
+            raise ValueError("trip_length must be at least 1.")
+        if v > 28:
+            raise ValueError("trip_length cannot exceed 28 days.")
+        return v
+
+
+@router.post("/plan-trip-mcp")
+async def plan_trip_mcp_endpoint(request: McpTripRequest):
+    """
+    Agentic planner path using Cerebras native tool calling.
+
+    The LLM dynamically fetches city coordinates, attraction data, day allocation,
+    and route order via tool rounds instead of receiving a pre-built context block.
+
+    Returns a JSON response (non-streaming — Cerebras limitation during tool rounds).
+    The X-Trip-Id header is set so the frontend can pick up the trip ID.
+    """
+    loop = asyncio.get_event_loop()
+    try:
+        trip_id, itinerary = await loop.run_in_executor(
+            executor,
+            lambda: plan_trip_mcp(
+                cities=request.cities,
+                trip_length=request.trip_length,
+                interests=request.interests,
+                existing_trip_id=request.trip_id,
+            ),
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return JSONResponse(
+        content={"itinerary": itinerary, "trip_id": trip_id},
         headers={"X-Trip-Id": str(trip_id)},
     )
 

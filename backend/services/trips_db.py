@@ -1,8 +1,9 @@
+import os
 import sqlite3
 import json
 from contextlib import contextmanager
 
-DB_PATH = "data/europlan.db"
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../data/europlan.db")
 
 @contextmanager
 def get_db():
