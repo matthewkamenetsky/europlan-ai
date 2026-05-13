@@ -1,13 +1,17 @@
 import os
-from cerebras.cloud.sdk import Cerebras
+import time
+import json
+from cerebras.cloud.sdk import Cerebras, RateLimitError
 from dotenv import load_dotenv
 
 load_dotenv()
 
-client = Cerebras(api_key=os.environ.get("CEREBRAS_API_KEY"))
+client = Cerebras(api_key=os.environ.get("CEREBRAS_API_KEY"), max_retries=5)
 
 MODEL = "qwen-3-235b-a22b-instruct-2507"
 FALLBACK_MODEL = "llama3.1-8b"
+
+_BACKOFF = [5, 15, 30, 60, 120]
 
 def stream_completion(prompt):
     if isinstance(prompt, str):
@@ -15,16 +19,28 @@ def stream_completion(prompt):
     else:
         messages = prompt
 
-    stream = client.chat.completions.create(
-        messages=messages,
-        model=MODEL,
-        max_completion_tokens=4096,
-        stream=True
-    )
-    for chunk in stream:
-        delta = chunk.choices[0].delta.content
-        if delta:
-            yield delta
+    last_error = None
+    for wait in [0] + _BACKOFF:
+        if wait:
+            print(f"[client] RateLimitError, retrying in {wait}s...")
+            time.sleep(wait)
+        try:
+            stream = client.chat.completions.create(
+                messages=messages,
+                model=MODEL,
+                max_completion_tokens=2000,
+                stream=True
+            )
+            for chunk in stream:
+                delta = chunk.choices[0].delta.content
+                if delta:
+                    yield delta
+            return
+        except RateLimitError as e:
+            last_error = e
+            continue
+
+    raise last_error
 
 
 def tool_completion(messages: list[dict], tools: list[dict], dispatcher) -> str:

@@ -15,10 +15,13 @@ Evaluate the itinerary across three dimensions:
    - Reward itineraries that correctly lighten the schedule on long travel days.
 
 2. PACING REALISM (pacing_score, 1-10)
-   - Does the number of days per city match its attraction density?
-   - A city with 1 day and many attractions is under-allocated. A city with 4 days and few attractions is over-allocated.
-   - Are activities spread sensibly across the day (morning / afternoon / evening)?
-   - Penalise itineraries that cram too many activities into a single day.
+   - You are given the cities-to-days ratio below. If total cities >= total days, this is severe over-cramming — score 1-3, no exceptions.
+   - Every city must have at least 1 full non-travel day. If any city appears only as a travel day with no dedicated full day, penalise heavily (score 1-4).
+   - Major cities (Rome, Paris, Barcelona, Vienna, Amsterdam, Prague, Berlin, Athens, Florence, Venice, Madrid, Milan, Budapest) require a minimum of 2 days. Allocating only 1 day to any of these is under-allocation — penalise.
+   - On a multi-city trip, if a single city receives more than 60% of total trip days, that is over-allocation — penalise.
+   - A single-city trip longer than 7 days is over-allocated unless the city is Rome, Paris, or Berlin.
+   - Penalise itineraries that schedule 4 or more distinct attractions in a single day.
+   - Are activities spread sensibly across the day (morning / afternoon)?
 
 3. PREFERENCE ALIGNMENT (preference_score, 1-10)
    - Does the itinerary reflect the user's ranked interests?
@@ -34,6 +37,9 @@ User interests (ranked, #1 = highest priority):
 
 Day allocation:
 {day_allocation}
+Total cities: {num_cities}
+Total days: {trip_length}
+Cities-to-days ratio: {num_cities}/{trip_length}
 
 Itinerary:
 {itinerary}

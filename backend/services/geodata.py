@@ -35,13 +35,22 @@ def get_city(city_name: str, db):
     if not cleaned:
         return None
     cursor = db.cursor()
+    # Try exact name/asciiname match first to avoid alternate name collisions
     cursor.execute("""
         SELECT name, country_code, lat, lon FROM cities
         WHERE LOWER(name) = LOWER(?)
            OR LOWER(asciiname) = LOWER(?)
-           OR LOWER(',' || alternatenames || ',') LIKE LOWER(?)
         LIMIT 1
-    """, (cleaned, cleaned, f"%,{cleaned},%"))
+    """, (cleaned, cleaned))
+    row = cursor.fetchone()
+    if row:
+        return row
+    # Fall back to alternatenames only if no exact match found
+    cursor.execute("""
+        SELECT name, country_code, lat, lon FROM cities
+        WHERE LOWER(',' || alternatenames || ',') LIKE LOWER(?)
+        LIMIT 1
+    """, (f"%,{cleaned},%",))
     return cursor.fetchone()
 
 

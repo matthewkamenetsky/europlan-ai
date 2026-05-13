@@ -97,6 +97,8 @@ def build_critique(trip_id: int) -> dict | None:
             interests=interests_str,
             day_allocation=day_allocation_str,
             itinerary=itinerary,
+            num_cities=len(cities),
+            trip_length=trip_length,
         )
 
     # Collect full response (critic is not streamed)
